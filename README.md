@@ -1,6 +1,6 @@
 # se84_dp
 
-**WORK IN PROGRESS**
+**WORK IN PROGRESS and most probably still quite buggy**
 
 A module for [luaXroot](https://github.com/zupalex/luaXroot) designed to treat data acquired during the 84Se(d,p) experiment performed at NSCL in December 2017.
 
