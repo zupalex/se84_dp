@@ -61,7 +61,7 @@ local CRDCProcessor = {
 --    tbranches.CRDC[crdcnum]:Get("pads"):PushBack(pad)
 --    tbranches.CRDC[crdcnum]:Get("raw"):PushBack(data.energies)
 --    tbranches.CRDC[crdcnum]:Get("sample_nbr"):PushBack(data.samples)
---    tbranches.CRDC[crdcnum]:Get("average_raw"):Set(en_avg)
+    tbranches.CRDC[crdcnum]:Get("average_raw"):Set(en_avg)
   end,
 
   cal = function(crdcnum, mult, xgravity)

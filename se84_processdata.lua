@@ -96,22 +96,22 @@ function ProcessNSCLBuffer(nscl_buffer, nevt_origin)
     end
   end
 
-  if nscl_buffer.sourceID == 2+16 and nscl_buffer.timestamp2 and nscl_buffer.timestamp2.value and nscl_buffer.timestamp16 and nscl_buffer.timestamp16.value then
---          print("Clock difference between ORNL and NSCL DAQ:", v.timestamp2.value - v.timestamp16.value)
-    nevt = nevt+1
+--  if nscl_buffer.sourceID == 2+16 and nscl_buffer.timestamp2 and nscl_buffer.timestamp2.value and nscl_buffer.timestamp16 and nscl_buffer.timestamp16.value then
+----          print("Clock difference between ORNL and NSCL DAQ:", v.timestamp2.value - v.timestamp16.value)
+--    nevt = nevt+1
 
-    local clock_diff = nscl_buffer.timestamp2.value - nscl_buffer.timestamp16.value
+--    local clock_diff = nscl_buffer.timestamp2.value - nscl_buffer.timestamp16.value
 
---    online_hists.h_clockdiff:Fill(nevt+nevt_origin, clock_diff)
+----    online_hists.h_clockdiff:Fill(nevt+nevt_origin, clock_diff)
 
---    if trig_coinc then
---      online_hists.h_clockdiff_coinc:Fill(nevt+nevt_origin, clock_diff)
---    end
+----    if trig_coinc then
+----      online_hists.h_clockdiff_coinc:Fill(nevt+nevt_origin, clock_diff)
+----    end
 
---    if clock_diff < coinc_window[2] and clock_diff > coinc_window[1] then
---      coinc_ORRUBA_S800 = true
---    end
-  end
+----    if clock_diff < coinc_window[2] and clock_diff > coinc_window[1] then
+----      coinc_ORRUBA_S800 = true
+----    end
+--  end
 
   if nscl_buffer.crdc ~= nil then
     for j=1,#nscl_buffer.crdc do
@@ -197,7 +197,7 @@ function ProcessNSCLBuffer(nscl_buffer, nevt_origin)
 
       buf_mem["crdc"..tostring(j).."x"] = nscl_buffer.crdc[j].xgravity
 
-      NSCL_UNPACKER.CRDCProcessor.cal(crdcid, mult, xgravity)
+      NSCL_UNPACKER.CRDCProcessor.cal(crdcid, mult, nscl_buffer.crdc[j].xgravity)
     end
 
     local beam_dif = {
@@ -267,10 +267,10 @@ function ProcessNSCLBuffer(nscl_buffer, nevt_origin)
     end
   end
 
-  if buf_mem.tofs and buf_mem.tofs.xf and buf_mem.beam_angle and buf_mem.crdc1x then
-    local corrf = cal_params.tof_correction
-    buf_mem.tofs.xf_corr = buf_mem.tofs.xf + buf_mem.beam_angle*corrf.beam_angle + buf_mem.crdc1x*corrf.crdc1x
-  end
+--  if buf_mem.tofs and buf_mem.tofs.xf and buf_mem.beam_angle and buf_mem.crdc1x then
+--    local corrf = cal_params.tof_correction
+--    buf_mem.tofs.xf_corr = buf_mem.tofs.xf + buf_mem.beam_angle*corrf.beam_angle + buf_mem.crdc1x*corrf.crdc1x
+--  end
 
   if nscl_buffer.ionchamber then
     local ic_avg = 0

@@ -106,7 +106,6 @@ class Se84UnpackerBox:
         for runcb in self.runsListFrame.runs:
             if runcb[1].get() == 1:
                 output_file = runcb[2]
-                output_file = output_file[0:output_file.rfind(".evt")]
                 output_file = output_dir + output_file + ".root"
                 
                 files_list = os.listdir(src_dir + "/" + runcb[2])
