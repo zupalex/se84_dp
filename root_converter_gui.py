@@ -128,7 +128,14 @@ class Se84UnpackerBox:
     
                 send_to_master(self.appProps, "ReplayNSCLEvt(\"root\", " + formated_runs_list + ", nil, true, \"" + output_file + "\")")
         
+                print("Sent request to treat", formated_runs_list, output_file)
+        
                 sleep(2)
+                
+                response_msg = receive_master_response(self.appProps)
+                
+                if response_msg != "ROOT conversion done":
+                    print("Issue receiving master task complete confirmation...")
     
     self.selectButtonsFrame = Frame(self.frame, background="cadetblue3")
     self.selectButtonsFrame.pack(pady=10)

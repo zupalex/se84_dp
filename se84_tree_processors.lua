@@ -7,8 +7,6 @@ LoadLib("./se84_detclasses_cxx.so", "se84_detclasses")
 local tbranches, tree, SIDAR_buf, BarrelUp_buf, BarrelDown_buf, Elastics_buf
 
 function Initialization(input_type)
-  print("setting up TTree")
-
   tree = TTree("se84", "84Se (d,p)")
 
   tbranches = {}

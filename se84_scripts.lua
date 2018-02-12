@@ -624,7 +624,8 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
 
   local stat_term = MakeSlaveTerm({bgcolor="Grey42", fgcolor="Grey93", fontstyle="Monospace", fontsize=10, geometry="100x15-0+0"})
 
-  print("Convert process started at")
+  print("Treating", evtfiles[1])
+  print("Treatment started at")
   local success = os.execute("date")
 
   stat_term:Write(string.format("\nNumber of file fragments: %d\n", #evtfiles))
@@ -695,8 +696,9 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
 
   stat_term:Write(string.format("\nProcessed %5.1f %% (%-12i packets)\n", 100.0, packet_counter))
 
-  print("Convert process finished at")
+  print("Treatment finished at")
   success = os.execute("date")
+  print("---------------------------------------")
 
   if tree then
     tree:Write()
@@ -708,4 +710,6 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
 
     buffile:Close()
   end
+
+  if mode == "root" and _getluaxrootparam("pygui_id") ~= -1 then __master_gui_socket:Send("ROOT conversion done") end
 end
