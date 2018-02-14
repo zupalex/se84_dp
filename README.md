@@ -24,7 +24,6 @@ Without any other user python scripts loaded, your *user/userpyscripts.py* shoul
 from se84_dp.root_converter_gui import *
 
 def load_user_py_scripts(master):
-
     add_evt_converter_button(master)
 ```
 
