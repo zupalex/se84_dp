@@ -13,16 +13,16 @@ function Initialization(input_type)
   tbranches.SIDAR = tree:NewBranch("SIDAR", "vector<SIDAR_detclass>")
 
   SIDAR_buf = {}
-  for i=1,6 do SIDAR_buf[i] = SIDAR_detclass() end
+  for i=1,6 do SIDAR_buf[i] = SIDAR_detclass(); SIDAR_buf[i]:Set("detID", i) end
 
   BarrelUp_buf = {}
-  for i=1,12 do BarrelUp_buf[i] = Barrel_detclass() end
+  for i=1,12 do BarrelUp_buf[i] = Barrel_detclass(); BarrelUp_buf[i]:Set("detID", i) end
 
   BarrelDown_buf = {}
-  for i=1,12 do BarrelDown_buf[i] = Barrel_detclass() end
+  for i=1,12 do BarrelDown_buf[i] = Barrel_detclass(); BarrelDown_buf[i]:Set("detID", i) end
 
   Elastics_buf = {}
-  for i=1,3 do Elastics_buf[i] = Barrel_detclass() end
+  for i=1,3 do Elastics_buf[i] = Barrel_detclass(); Elastics_buf[i]:Set("detID", i) end
 
   tbranches.BarrelUp = tree:NewBranch("BarrelUp", "vector<Barrel_detclass>")
 
@@ -110,7 +110,7 @@ local ORRUBAProcessor = function(orruba_data)
         if not SIDAR_hits[detnum] then
           SIDAR_hits[detnum] = true
           SIDAR_buf[detnum]:Reset()
-          SIDAR_buf[detnum]:Set("detID", detnum)
+--          SIDAR_buf[detnum]:Set("detID", detnum)
         end
 
         if detinfo.detpos == "dE" then
@@ -126,7 +126,7 @@ local ORRUBAProcessor = function(orruba_data)
         if not BarrelUp_hits[detnum] then
           BarrelUp_hits[detnum] = true
           BarrelUp_buf[detnum]:Reset()
-          BarrelUp_buf[detnum]:Set("detID", detnum)
+--          BarrelUp_buf[detnum]:Set("detID", detnum)
         end
 
         BarrelUp_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
@@ -137,7 +137,7 @@ local ORRUBAProcessor = function(orruba_data)
         if not BarrelUp_hits[detnum] then
           BarrelUp_hits[detnum] = true
           BarrelUp_buf[detnum]:Reset()
-          BarrelUp_buf[detnum]:Set("detID", detnum)
+--          BarrelUp_buf[detnum]:Set("detID", detnum)
         end
 
         if detinfo.detside == "front" then
@@ -153,7 +153,7 @@ local ORRUBAProcessor = function(orruba_data)
         if not BarrelDown_hits[detnum] then
           BarrelDown_hits[detnum] = true
           BarrelDown_buf[detnum]:Reset()
-          BarrelDown_buf[detnum]:Set("detID", detnum)
+--          BarrelDown_buf[detnum]:Set("detID", detnum)
         end
 
         BarrelDown_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
@@ -164,7 +164,7 @@ local ORRUBAProcessor = function(orruba_data)
         if not BarrelDown_hits[detnum] then
           BarrelDown_hits[detnum] = true
           BarrelDown_buf[detnum]:Reset()
-          BarrelDown_buf[detnum]:Set("detID", detnum)
+--          BarrelDown_buf[detnum]:Set("detID", detnum)
         end
 
         if detinfo.detside == "front" then
@@ -180,7 +180,7 @@ local ORRUBAProcessor = function(orruba_data)
         if not Elastics_hits[detnum] then
           Elastics_hits[detnum] = true
           Elastics_buf[detnum]:Reset()
-          Elastics_buf[detnum]:Set("detID", detnum)
+--          Elastics_buf[detnum]:Set("detID", detnum)
         end
 
         if detinfo.detside == "front" then
@@ -198,6 +198,8 @@ local ORRUBAProcessor = function(orruba_data)
   end
 
   for k, v in pairs(BarrelUp_hits) do
+    local contacts = BarrelUp_buf[k]:Get("E_front_contacts"):Get()
+
     tbranches.BarrelUp:PushBack(BarrelUp_buf[k])
   end
 
