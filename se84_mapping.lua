@@ -94,10 +94,14 @@ local mapping = {
   MCP = {
     TRACK1 = { 
       QDC = {
-        TOPRIGHT = { ch=865 }, 
-        TOPLEFT = { ch=866 }, 
-        BOTTOMLEFT = { ch=867 }, 
-        BOTTOMRIGHT = { ch=868 } 
+        TOPRIGHT_LG = { ch=865 }, 
+        TOPLEFT_LG = { ch=867 }, 
+        BOTTOMLEFT_LG = { ch=869 }, 
+        BOTTOMRIGHT_LG = { ch=871 },
+        TOPRIGHT_HG = { ch=866 }, 
+        TOPLEFT_HG = { ch=868 }, 
+        BOTTOMLEFT_HG = { ch=870 }, 
+        BOTTOMRIGHT_HG = { ch=872 },
       }, 
 
       MPD4 = {
@@ -110,10 +114,14 @@ local mapping = {
 
     TRACK2 = { 
       QDC = {
-        TOPRIGHT = { ch=869 }, 
-        TOPLEFT = { ch=870 }, 
-        BOTTOMLEFT = { ch=871 }, 
-        BOTTOMRIGHT = { ch=872 } 
+        TOPRIGHT_LG = { ch=873 }, 
+        TOPLEFT_LG = { ch=875 }, 
+        BOTTOMLEFT_LG = { ch=877 }, 
+        BOTTOMRIGHT_LG = { ch=879 },
+        TOPRIGHT_HG = { ch=874 }, 
+        TOPLEFT_HG = { ch=876 }, 
+        BOTTOMLEFT_HG = { ch=878 }, 
+        BOTTOMRIGHT_HG = { ch=880 },
       },
 
       MPD4 = {
@@ -126,8 +134,16 @@ local mapping = {
   },
 
   TDC = {
-    E1 = { ch=805 }, XF = { ch=806 }, RF = { ch=807 }, MCP1 = { ch=809 }, MCP2 = { ch=810 },
-  }
+    E1 = { ch=805 }, XF = { ch=806 }, RF = { ch=807 }, RF_unvetoed = { ch=808 }, MCP1 = { ch=809 }, MCP2 = { ch=810 }, MCP1_MDP4 = { ch=811 }, MCP2_MDP4 = { ch=812 },
+  },
+
+  EVTSCALERS = {
+    ts_10Mhz_ORRUBA_high = { ch = 901 }, ts_10Mhz_ORRUBA_med = { ch = 902 }, ts_10Mhz_ORRUBA_low = { ch = 903 },
+    clock_100Hz_med = { ch = 905 }, clock_100Hz_low = { ch = 906 },
+    clock_100Hz_vetoed_med = { ch = 908 }, clock_100Hz_vetoed_low = { ch = 909 },
+    clocl_vme_med = { ch = 999 }, clock_vme_low = { ch = 998 },
+    trig_total_med = { ch = 911 }, trig_total_low = { ch = 912 }, trig_si_med = { ch = 914 }, trih_si_low = { ch = 915 },
+  },
 }
 
 local function MakeChannelToDetector()
@@ -146,7 +162,7 @@ local function MakeChannelToDetector()
         for i= 1, detectors_properties[k].front.connectors or detectors_properties[k].front.strips do
           local fkey = k.." "..tostring(det).." "..(v.back == nil and "" or "f")..tostring(i)
           local chnum = v.front.ch+i-1
-          chan_to_det[chnum] = {stripid = fkey, detnum = detnum, detpos = detpos, detside = "front", detid = det, dettype = k, stripnum = i}
+          chan_to_det[chnum] = {stripid = fkey, detnum = detnum, detpos = detpos, detside = "front", detid = det, dettype = k, stripnum = i, channel = chnum}
           det_to_chan[fkey] = {channel = chnum, detnum = detnum, detpos = detpos, detside = "front", detid = det, dettype = k, stripnum = i}
         end
       end
@@ -155,7 +171,7 @@ local function MakeChannelToDetector()
         for i= 1, detectors_properties[k].back.connectors or detectors_properties[k].back.strips do
           local bkey = k.." "..tostring(det).." b"..tostring(i)
           local chnum = v.back.ch+i-1
-          chan_to_det[chnum] = {stripid = fkey, detnum = detnum, detpos = detpos, detside = "back", detid = det, dettype = k, stripnum = i}
+          chan_to_det[chnum] = {stripid = fkey, detnum = detnum, detpos = detpos, detside = "back", detid = det, dettype = k, stripnum = i, channel = chnum}
           det_to_chan[bkey] = {channel = chnum, detnum = detnum, detpos = detpos, detside = "back", detid = det, dettype = k, stripnum = i}
         end
       end
@@ -164,7 +180,7 @@ local function MakeChannelToDetector()
         for mod, chs in pairs(v) do
           for attr, chinfo in pairs(chs) do
             local fkey = k.." "..tostring(det).." "..tostring(mod).. " "..tostring(attr)
-            chan_to_det[chinfo.ch] = {stripid = fkey, detnum = detnum, detpos = detpos, detid = det, dettype = k, detmod = mod, stripnum = attr}
+            chan_to_det[chinfo.ch] = {stripid = fkey, detnum = detnum, detpos = detpos, detid = det, dettype = k, detmod = mod, stripnum = attr, channel = chinfo.ch}
             det_to_chan[fkey] = {channel = chinfo.ch, detnum = detnum, detpos = detpos, detid = det, dettype = k, detmod = mod, stripnum = i}
           end
         end
@@ -174,7 +190,15 @@ local function MakeChannelToDetector()
     if k == "TDC" then
       for det, chinfo in pairs(dets) do
         local fkey = k.." "..tostring(det)
-        chan_to_det[chinfo.ch] = {stripid = fkey, detnum = detnum, detpos = detpos, detid = det, dettype = k}
+        chan_to_det[chinfo.ch] = {stripid = fkey, detnum = detnum, detpos = detpos, detid = det, dettype = k, channel = chinfo.ch}
+        det_to_chan[fkey] = {channel = chinfo.ch, detnum = detnum, detpos = detpos, detid = det, dettype = k}
+      end
+    end
+
+    if k == "EVTSCALERS" then
+      for det, chinfo in pairs(dets) do
+        local fkey = k.." "..tostring(det)
+        chan_to_det[chinfo.ch] = {stripid = fkey, detnum = detnum, detpos = detpos, detid = det, dettype = k, channel = chinfo.ch}
         det_to_chan[fkey] = {channel = chinfo.ch, detnum = detnum, detpos = detpos, detid = det, dettype = k}
       end
     end

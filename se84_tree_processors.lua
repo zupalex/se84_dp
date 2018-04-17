@@ -4,7 +4,7 @@ local calib = require("se84_dp/se84_calibration")
 
 LoadLib("./se84_detclasses_cxx.so", "se84_detclasses")
 
-local tbranches, tree, SIDAR_buf, BarrelUp_buf, BarrelDown_buf, Elastics_buf
+local tbranches, tree, SIDAR_buf, BarrelUp_buf, BarrelDown_buf, Elastics_buf, SIDAR_hits, BarrelUp_hits, BarrelDown_hits, Elastics_hits
 
 function Initialization(input_type)
   tree = TTree("se84", "84Se (d,p)")
@@ -40,7 +40,17 @@ function Initialization(input_type)
 
   tbranches.Scintillators = tree:NewBranch("Scintillators", "Scintillators_detclass")
 
+  tbranches.MCP1 = tree:NewBranch("MCP1", "Generic_detclass")
+  tbranches.MCP2 = tree:NewBranch("MCP2", "Generic_detclass")
+
+  tbranches.TDC = tree:NewBranch("TDC", "Generic_detclass")
+
+  tbranches.EVTSCALERS = tree:NewBranch("EventScalers", "Generic_detclass")
+
   tbranches.trig = tree:NewBranch("trig", "short")
+
+  tbranches.ts_s800 = tree:NewBranch("ts_s800", "unsigned long long")
+  tbranches.ts_ORRUBA = tree:NewBranch("ts_ORRUBA", "unsigned long long")
 
   return tree, tbranches
 end
@@ -94,100 +104,138 @@ local MTDCProcessor = {
   end,
 }
 
+local TimestampProcessor = function(val, src)
+  if src == 2 then tbranches.ts_s800:Set(val) end
+  if src == 16 then tbranches.ts_ORRUBA:Set(val) end
+end
+
+local ORRUBAFillFns = {}
+
+ORRUBAFillFns.SIDAR = function(detinfo, val)
+  local detnum = detinfo.detnum
+
+  if not SIDAR_hits[detnum] then
+    SIDAR_hits[detnum] = true
+    SIDAR_buf[detnum]:Reset()
+  end
+
+  if detinfo.detpos == "dE" then
+    SIDAR_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
+    SIDAR_buf[detnum]:Get("dE_energies"):PushBack(val)
+  else
+    SIDAR_buf[detnum]:Get("E_strips"):PushBack(detinfo.stripnum)
+    SIDAR_buf[detnum]:Get("E_energies"):PushBack(val)
+  end
+end
+
+ORRUBAFillFns.BB10 = function(detinfo, val)
+  local detnum = detinfo.detnum
+
+  if not BarrelUp_hits[detnum] then
+    BarrelUp_hits[detnum] = true
+    BarrelUp_buf[detnum]:Reset()
+  end
+
+  BarrelUp_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
+  BarrelUp_buf[detnum]:Get("dE_energies"):PushBack(val)
+end
+
+superX3Ufn = function(detinfo, val)
+  local detnum = detinfo.detnum
+
+  if not BarrelUp_hits[detnum] then
+    BarrelUp_hits[detnum] = true
+    BarrelUp_buf[detnum]:Reset()
+  end
+
+  if detinfo.detside == "front" then
+    BarrelUp_buf[detnum]:Get("E_front_contacts"):PushBack(detinfo.stripnum)
+    BarrelUp_buf[detnum]:Get("E_front_energies"):PushBack(val)
+  else
+    BarrelUp_buf[detnum]:Get("E_back_strips"):PushBack(detinfo.stripnum)
+    BarrelUp_buf[detnum]:Get("E_back_energies"):PushBack(val)
+  end
+end
+
+superX3Dfn = function(detinfo, val)
+  local detnum = detinfo.detnum
+
+  if not BarrelDown_hits[detnum] then
+    BarrelDown_hits[detnum] = true
+    BarrelDown_buf[detnum]:Reset()
+  end
+
+  if detinfo.detside == "front" then
+    BarrelDown_buf[detnum]:Get("E_front_contacts"):PushBack(detinfo.stripnum)
+    BarrelDown_buf[detnum]:Get("E_front_energies"):PushBack(val)
+  else
+    BarrelDown_buf[detnum]:Get("E_back_strips"):PushBack(detinfo.stripnum)
+    BarrelDown_buf[detnum]:Get("E_back_energies"):PushBack(val)
+  end
+end
+
+ORRUBAFillFns.SuperX3 = function(detinfo, val)
+  if detinfo.detpos == "U" then
+    superX3Ufn(detinfo, val)
+  else
+    superX3Dfn(detinfo, val)
+  end
+end
+
+ORRUBAFillFns.X3 = function(detinfo, val)
+  local detnum = detinfo.detnum
+
+  if not BarrelDown_hits[detnum] then
+    BarrelDown_hits[detnum] = true
+    BarrelDown_buf[detnum]:Reset()
+  end
+
+  BarrelDown_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
+  BarrelDown_buf[detnum]:Get("dE_energies"):PushBack(val)
+end
+
+ORRUBAFillFns.Elastics = function(detinfo, val)
+  local detnum = detinfo.detnum
+
+  if not Elastics_hits[detnum] then
+    Elastics_hits[detnum] = true
+    Elastics_buf[detnum]:Reset()
+  end
+
+  if detinfo.detside == "front" then
+    Elastics_buf[detnum]:Get("E_front_contacts"):PushBack(detinfo.stripnum)
+    Elastics_buf[detnum]:Get("E_front_energies"):PushBack(val)
+  end
+end
+
+ORRUBAFillFns.MCP = function(detinfo, val)
+  local mcp_branch = detinfo.detnum == 1 and tbranches.MCP1 or tbranches.MCP2
+  mcp_branch:Get("channels"):PushBack(detinfo.channel)
+  mcp_branch:Get("values"):PushBack(val)
+end
+
+ORRUBAFillFns.TDC = function(detinfo, val)
+  tbranches.TDC:Get("channels"):PushBack(detinfo.channel)
+  tbranches.TDC:Get("values"):PushBack(val)
+end
+
+ORRUBAFillFns.EVTSCALERS = function(detinfo, val)
+  tbranches.EVTSCALERS:Get("channels"):PushBack(detinfo.channel)
+  tbranches.EVTSCALERS:Get("values"):PushBack(val)
+end
+
 local ORRUBAProcessor = function(orruba_data)
-  local SIDAR_hits = {}
-  local BarrelUp_hits = {}
-  local BarrelDown_hits = {}
-  local Elastics_hits = {}
+  SIDAR_hits = {}
+  BarrelUp_hits = {}
+  BarrelDown_hits = {}
+  Elastics_hits = {}
 
   for k, v in pairs(orruba_data) do
     local detinfo = mapping.getdetinfo(k)
 
     if detinfo then
-      if detinfo.dettype == "SIDAR" then
-        local detnum = detinfo.detnum
-
-        if not SIDAR_hits[detnum] then
-          SIDAR_hits[detnum] = true
-          SIDAR_buf[detnum]:Reset()
---          SIDAR_buf[detnum]:Set("detID", detnum)
-        end
-
-        if detinfo.detpos == "dE" then
-          SIDAR_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
-          SIDAR_buf[detnum]:Get("dE_energies"):PushBack(v)
-        else
-          SIDAR_buf[detnum]:Get("E_strips"):PushBack(detinfo.stripnum)
-          SIDAR_buf[detnum]:Get("E_energies"):PushBack(v)
-        end
-      elseif detinfo.dettype == "BB10" then
-        local detnum = detinfo.detnum
-
-        if not BarrelUp_hits[detnum] then
-          BarrelUp_hits[detnum] = true
-          BarrelUp_buf[detnum]:Reset()
---          BarrelUp_buf[detnum]:Set("detID", detnum)
-        end
-
-        BarrelUp_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
-        BarrelUp_buf[detnum]:Get("dE_energies"):PushBack(v)
-      elseif detinfo.dettype == "SuperX3" and detinfo.detpos == "U" then
-        local detnum = detinfo.detnum
-
-        if not BarrelUp_hits[detnum] then
-          BarrelUp_hits[detnum] = true
-          BarrelUp_buf[detnum]:Reset()
---          BarrelUp_buf[detnum]:Set("detID", detnum)
-        end
-
-        if detinfo.detside == "front" then
-          BarrelUp_buf[detnum]:Get("E_front_contacts"):PushBack(detinfo.stripnum)
-          BarrelUp_buf[detnum]:Get("E_front_energies"):PushBack(v)
-        else
-          BarrelUp_buf[detnum]:Get("E_back_energies"):PushBack(v)
-          BarrelUp_buf[detnum]:Get("E_back_strips"):PushBack(detinfo.stripnum)
-        end
-      elseif detinfo.dettype == "X3" then
-        local detnum = detinfo.detnum
-
-        if not BarrelDown_hits[detnum] then
-          BarrelDown_hits[detnum] = true
-          BarrelDown_buf[detnum]:Reset()
---          BarrelDown_buf[detnum]:Set("detID", detnum)
-        end
-
-        BarrelDown_buf[detnum]:Get("dE_strips"):PushBack(detinfo.stripnum)
-        BarrelDown_buf[detnum]:Get("dE_energies"):PushBack(v)
-      elseif detinfo.dettype == "SuperX3" and detinfo.detpos == "D" then
-        local detnum = detinfo.detnum
-
-        if not BarrelDown_hits[detnum] then
-          BarrelDown_hits[detnum] = true
-          BarrelDown_buf[detnum]:Reset()
---          BarrelDown_buf[detnum]:Set("detID", detnum)
-        end
-
-        if detinfo.detside == "front" then
-          BarrelDown_buf[detnum]:Get("E_front_contacts"):PushBack(detinfo.stripnum)
-          BarrelDown_buf[detnum]:Get("E_front_energies"):PushBack(v)
-        else
-          BarrelDown_buf[detnum]:Get("E_back_energies"):PushBack(v)
-          BarrelDown_buf[detnum]:Get("E_back_strips"):PushBack(detinfo.stripnum)
-        end
-      elseif detinfo.dettype == "Elastics" then
-        local detnum = detinfo.detnum
-
-        if not Elastics_hits[detnum] then
-          Elastics_hits[detnum] = true
-          Elastics_buf[detnum]:Reset()
---          Elastics_buf[detnum]:Set("detID", detnum)
-        end
-
-        if detinfo.detside == "front" then
-          Elastics_buf[detnum]:Get("E_front_contacts"):PushBack(detinfo.stripnum)
-          Elastics_buf[detnum]:Get("E_front_energies"):PushBack(v)
-        end
-      end
+      local fillfn = ORRUBAFillFns[detinfo.dettype]
+      if fillfn then fillfn(detinfo, v) end
     else
 --      print("no detinfo for channel", k)
     end
@@ -198,8 +246,6 @@ local ORRUBAProcessor = function(orruba_data)
   end
 
   for k, v in pairs(BarrelUp_hits) do
-    local contacts = BarrelUp_buf[k]:Get("E_front_contacts"):Get()
-
     tbranches.BarrelUp:PushBack(BarrelUp_buf[k])
   end
 
@@ -224,8 +270,11 @@ NSCL_UNPACKER.SetMTDCProcessor(MTDCProcessor)
 NSCL_UNPACKER.SetTriggerProcessor(TriggerProcessor)
 --NSCL_UNPACKER.SetTOFProcessor()
 NSCL_UNPACKER.SetORRUBAProcessor(ORRUBAProcessor)
+NSCL_UNPACKER.TriggerProcessor = TriggerProcessor
+NSCL_UNPACKER.TimestampProcessor = TimestampProcessor
 
-NSCL_UNPACKER.SetPostProcessing(function()
+NSCL_UNPACKER.SetPostProcessing(function(buf)
+--    tbranches.timestamp:Set(buf.timestamp)
     tree:Fill()
     tree:Reset()
   end)

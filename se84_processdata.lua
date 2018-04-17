@@ -96,6 +96,16 @@ function ProcessNSCLBuffer(nscl_buffer, nevt_origin)
     end
   end
 
+  if nscl_buffer.sourceID then
+    if (nscl_buffer.sourceID & 2) == 2 then
+      NSCL_UNPACKER.TimestampProcessor(nscl_buffer.timestamp2.value, 2)
+    end
+
+    if (nscl_buffer.sourceID & 16) == 16 then
+      NSCL_UNPACKER.TimestampProcessor(nscl_buffer.timestamp16.value, 16)
+    end
+  end
+
 --  if nscl_buffer.sourceID == 2+16 and nscl_buffer.timestamp2 and nscl_buffer.timestamp2.value and nscl_buffer.timestamp16 and nscl_buffer.timestamp16.value then
 ----          print("Clock difference between ORNL and NSCL DAQ:", v.timestamp2.value - v.timestamp16.value)
 --    nevt = nevt+1
@@ -449,6 +459,8 @@ function ProcessNSCLBuffer(nscl_buffer, nevt_origin)
 --      online_hists.ic_vs_xfp_gate_sx3down_protons_any:Fill(buf_mem.tofs.xf_corr, buf_mem.ic_avg)
 --    end
 --  end
+
+  NSCL_UNPACKER.PostProcessing(nscl_buffer)
 
   return nevt
 end

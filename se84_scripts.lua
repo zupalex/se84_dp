@@ -1,6 +1,10 @@
 local OverrideIdentifyPacket = require("nscl_unpacker/packet_identifier.lua")
 
-require("nscl_unpacker/nscl_unpacker")
+nscl_buffer = {}
+scaler_buffer = {}
+physics_count_buffer = {}
+
+requirep("nscl_unpacker/nscl_unpacker")
 require("se84_dp/se84_processdata")
 
 NSCL_UNPACKER.NSCL_DAQ_VERSION = 11.0
@@ -328,6 +332,7 @@ function SetOutputType(out_type, input_type, output_name)
   elseif out_type:lower() == "root" then
     local init = require("se84_dp/se84_tree_processors")
     tree, tbranches = init(input_type)
+    print(tree)
   end
 end
 
@@ -574,6 +579,41 @@ function GenerateFilesInput(origin_path, runnbrs)
   return evtfiles
 end
 
+local LDF_UNPACKER = require("ldf_unpacker/ldf_onlinereader")
+
+local function UnpackLDFPacket()
+  local htype, ev_data = LDF_UNPACKER.ReadNextRecord()
+
+  if htype == "DATA" then
+    for i, orruba_buff in ipairs(ev_data) do
+      nscl_buffer.orruba = orruba_buff
+      ProcessNSCLBuffer(nscl_buffer, nevt)
+    end
+  elseif htype == nil then 
+    htype = "EOF"
+  end
+
+  nscl_buffer = {}
+  scaler_buffer = {}
+
+  return htype, 32776
+end
+
+local function UnpackEvtPacket(bfile)
+  local ptype, bread = ReadNextPacket(bfile)
+
+  if ptype ~= nil then
+    if debug_log == 0 and ptype == "PHYSICS_EVENT" then
+      ProcessNSCLBuffer(nscl_buffer, nevt)
+    end
+
+    nscl_buffer = {}
+    scaler_buffer = {}
+  end
+
+  return ptype, bread
+end
+
 function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
   nscl_buffer = {}
   scaler_buffer = {}
@@ -585,17 +625,26 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
     evtfiles = {evtfiles}
   end
 
-  local s800_file = assert(io.open(evtfiles[1])) 
+  local bin_file = assert(io.open(evtfiles[1]))
+
+  local UnpackBinary
+
+  if evtfiles[1]:find(".evt") ~= nil then
+    UnpackBinary = UnpackEvtPacket
+  elseif evtfiles[1]:find(".ldf") ~= nil then
+    LDF_UNPACKER.bindata.file = bin_file
+    UnpackBinary = UnpackLDFPacket
+  end
 
   local fpos = 0
-  local filelength = s800_file:seek("end")
-  s800_file:seek("set")
+  local filelength = bin_file:seek("end")
+  bin_file:seek("set")
 
   local packet_counter = 0
 
   if skip_to_physics then
-    while ReadNextPacket(s800_file) ~= "PHYSICS_EVENT" do
-      ReadNextPacket(s800_file)
+    while ReadNextPacket(bin_file) ~= "PHYSICS_EVENT" do
+      ReadNextPacket(bin_file)
     end
   end
 
@@ -617,7 +666,7 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
     buffile:Write()
   end
 
-  local dumpEvery = 10000
+  local dumpEvery = 1000
   local prevProgress = 0
 
   local nevt = 0
@@ -639,9 +688,18 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
         fpos = 0
         stat_term:Write(string.format("\nFinished treating %s, switching to %s\n", evtfiles[1], evtfiles[2]))
         table.remove(evtfiles, 1)
-        s800_file = assert(io.open(evtfiles[1]))
-        filelength = s800_file:seek("end")
-        s800_file:seek("set", 0)
+
+        bin_file = assert(io.open(evtfiles[1]))
+
+        if evtfiles[1]:find(".evt") ~= nil then
+          UnpackBinary = UnpackEvtPacket
+        elseif evtfiles[1]:find(".ldf") ~= nil then
+          LDF_UNPACKER.bindata.file = bin_file
+          UnpackBinary = UnpackLDFPacket
+        end
+
+        filelength = bin_file:seek("end")
+        bin_file:seek("set", 0)
         buffile:Overwrite()
         buffile:Flush()
 
@@ -675,22 +733,13 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
 --      end
     end
 
-    local ptype, bread = ReadNextPacket(s800_file)
+    local ptype, bread = UnpackBinary(bin_file)
 
     if ptype ~= nil then
       nevt = nevt+1
       packet_counter = packet_counter+1
 
-      if debug_log == 0 and ptype == "PHYSICS_EVENT" then
-        ProcessNSCLBuffer(nscl_buffer, nevt)
-      end
-
-      nscl_buffer = {}
-      scaler_buffer = {}
-
-      fpos = s800_file:seek("cur")
-
-      NSCL_UNPACKER.PostProcessing()
+      fpos = bin_file:seek("cur")
     end
   end
 

@@ -627,6 +627,8 @@ NSCL_UNPACKER.SetMTDCProcessor(MTDCProcessor)
 NSCL_UNPACKER.SetTriggerProcessor(function() end)
 --NSCL_UNPACKER.SetTOFProcessor()
 NSCL_UNPACKER.SetORRUBAProcessor(ORRUBAProcessor)
+NSCL_UNPACKER.TriggerProcessor = function() end
+NSCL_UNPACKER.TimestampProcessor = function() end
 
 NSCL_UNPACKER.SetCorrelationProcessor(CorrelationProcessor)
 

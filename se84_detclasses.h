@@ -8,10 +8,26 @@
 
 using namespace std;
 
+// ----------------- Generic "Detector" Class ------------------------- //
+
+class Generic_detclass: public LuaUserClass {
+	public:
+		Generic_detclass()
+		{
+		}
+
+		int detID = -1;
+
+		vector<int> channels;
+		vector<double> values;
+
+		void Reset();
+		void MakeAccessors(lua_State* L);
+};
+
 // ----------------- SIDAR Class ------------------------- //
 
 class SIDAR_detclass: public LuaUserClass {
-// This class is for ASICs hit
 	public:
 		SIDAR_detclass()
 		{
@@ -72,7 +88,6 @@ class SIDAR_detclass: public LuaUserClass {
 // ----------------- Barrel Class ------------------------- //
 
 class Barrel_detclass: public LuaUserClass {
-// This class is for ASICs hit
 	public:
 		Barrel_detclass()
 		{
@@ -96,7 +111,6 @@ class Barrel_detclass: public LuaUserClass {
 // ----------------- Ion Chamber Class ------------------------- //
 
 class IonChamber_detclass: public LuaUserClass {
-// This class is for ASICs hit
 	public:
 		IonChamber_detclass()
 		{
@@ -114,7 +128,6 @@ class IonChamber_detclass: public LuaUserClass {
 // ----------------- CRDC Class ------------------------- //
 
 class CRDC_detclass: public LuaUserClass {
-// This class is for ASICs hit
 	public:
 		CRDC_detclass()
 		{
@@ -135,7 +148,6 @@ class CRDC_detclass: public LuaUserClass {
 // ----------------- MTDC Class ------------------------- //
 
 class MTDC_detclass: public LuaUserClass {
-// This class is for ASICs hit
 	public:
 		MTDC_detclass()
 		{
@@ -153,7 +165,6 @@ class MTDC_detclass: public LuaUserClass {
 // ----------------- Scintillators Class ------------------------- //
 
 class Scintillators_detclass: public LuaUserClass {
-// This class is for ASICs hit
 	public:
 		Scintillators_detclass()
 		{
@@ -168,6 +179,7 @@ class Scintillators_detclass: public LuaUserClass {
 
 extern "C" int openlib_se84_detclasses(lua_State* L)
 {
+	MakeAccessFunctions<Generic_detclass>(L, "Generic_detclass");
 	MakeAccessFunctions<SIDAR_detclass>(L, "SIDAR_detclass");
 	MakeAccessFunctions<Barrel_detclass>(L, "Barrel_detclass");
 	MakeAccessFunctions<IonChamber_detclass>(L, "IonChamber_detclass");

@@ -1,5 +1,20 @@
 #include "se84_detclasses.h"
 
+// ----------------- Generic "Detector" Class ------------------------- //
+
+void Generic_detclass::Reset()
+{
+	channels.clear();
+	values.clear();
+}
+
+void Generic_detclass::MakeAccessors(lua_State* L)
+{
+	AddAccessor(L, &detID, "detID", "int");
+	AddAccessor(L, &channels, "channels", "vector<int>");
+	AddAccessor(L, &values, "values", "vector<double>");
+}
+
 // ----------------- SIDAR Class ------------------------- //
 
 void SIDAR_detclass::Reset()
