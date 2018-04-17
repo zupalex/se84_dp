@@ -2,7 +2,7 @@ require("nscl_unpacker/nscl_unpacker_cfg")
 local mapping = require("se84_dp/se84_mapping")
 local calib = require("se84_dp/se84_calibration")
 
-LoadLib("./se84_detclasses_cxx.so", "se84_detclasses")
+LoadLib("se84_detclasses_cxx.so", "se84_detclasses")
 
 local tbranches, tree, SIDAR_buf, BarrelUp_buf, BarrelDown_buf, Elastics_buf, SIDAR_hits, BarrelUp_hits, BarrelDown_hits, Elastics_hits
 
