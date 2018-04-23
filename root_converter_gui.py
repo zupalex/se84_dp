@@ -32,7 +32,7 @@ class Se84UnpackerBox:
     send_to_master(self.appProps, "CompileC(\"" + get_luaXroot_path() + "user/se84_dp/se84_detclasses.cxx\", \"se84_detclasses\")")
     
   def convert_run(self):
-    run_to_convert = tkFileDialog.askopenfilename(initialdir="/", title="Select Run", filetypes=(("evt files", "*.evt"),))
+    run_to_convert = tkFileDialog.askopenfilename(initialdir="/", title="Select Run", filetypes=(("evt files", "*.evt"), ("ldf files", "*.ldf"), ("all files", "*"),))
     
     if len(run_to_convert) == 0:
         return
@@ -44,7 +44,7 @@ class Se84UnpackerBox:
                                   "ReplayNSCLEvt(\"root\", \"" + run_to_convert + "\", nil, true, \"" + output_file + "\")")
     
   def convert_multi_runs(self):
-    runs_to_convert = tkFileDialog.askopenfilenames(initialdir="/", title="Select Run", filetypes=(("evt files", "*.evt"),))
+    runs_to_convert = tkFileDialog.askopenfilenames(initialdir="/", title="Select Run", filetypes=(("evt files", "*.evt"), ("ldf files", "*.ldf"), ("all files", "*"),))
     
     if len(runs_to_convert) == 0:
         return
@@ -56,15 +56,17 @@ class Se84UnpackerBox:
     output_dir = output_dir + "/"
     
     for run in runs_list:
-        output_file = runs_list[0][runs_list[0].rfind("/") + 1:]
-        output_file = output_file[0:output_file.rfind(".evt")]
-        output_file = output_dir + output_file + ".root"
-    
-        sent = send_to_master(self.appProps, "dofile(\"" + get_luaXroot_path() + "user/se84_dp/se84_scripts.lua\");"
-                                            "ReplayNSCLEvt(\"root\", \"" + runs_to_convert[0] + "\", nil, true, \"" + output_file + "\")")
+        for ext in [".evt", ".ldf"]:
+            output_file = runs_list[0][runs_list[0].rfind("/") + 1:]
+            output_file = output_file[0:output_file.rfind(ext)]
+            output_file = output_dir + output_file + ".root"
         
-        print("sent command for", run)
-        sleep(2)
+            sent = send_to_master(self.appProps, "dofile(\"" + get_luaXroot_path() + "user/se84_dp/se84_scripts.lua\");"
+                                                "ReplayNSCLEvt(\"root\", \"" + runs_to_convert[0] + "\", nil, true, \"" + output_file + "\")")
+            
+            print("sent command for", run)
+            sleep(2)
+            break
     
   def convert_by_folder(self):            
     src_dir = tkFileDialog.askdirectory(initialdir="/", title="Select Source Directory")
@@ -81,7 +83,7 @@ class Se84UnpackerBox:
             files_list = os.listdir(src_dir + "/" + run_dir)
             
             for file in files_list:
-                if file.find(".evt") >= 0:
+                if file.find(".evt") >= 0 or file.find(".ldf") >= 0:
                     runs_list.append(run_dir)
                     break
             
@@ -113,9 +115,11 @@ class Se84UnpackerBox:
                 run_frags = list()
                 
                 for file in files_list:
-                    if file.find(".evt") >= 0:
-                        frag_num = file[file.find(".evt")-2:file.find(".evt")]
-                        run_frags.append((src_dir + "/" + runcb[2] + "/" + file, frag_num))
+                    for ext in [".evt", ".ldf"]:
+                        if file.find(ext) >= 0:
+                            frag_num = file[file.find(ext)-2:file.find(ext)]
+                            run_frags.append((src_dir + "/" + runcb[2] + "/" + file, frag_num))
+                            break
                 
                 run_frags.sort(key=lambda entry: entry[1])
                 

@@ -629,23 +629,23 @@ function ReplayNSCLEvt(mode, evtfiles, max_packet, skip_to_physics, outroot)
 
   local UnpackBinary
 
-  if evtfiles[1]:find(".evt") ~= nil then
-    UnpackBinary = UnpackEvtPacket
-  elseif evtfiles[1]:find(".ldf") ~= nil then
-    LDF_UNPACKER.bindata.file = bin_file
-    UnpackBinary = UnpackLDFPacket
-  end
-
   local fpos = 0
   local filelength = bin_file:seek("end")
   bin_file:seek("set")
 
   local packet_counter = 0
 
-  if skip_to_physics then
-    while ReadNextPacket(bin_file) ~= "PHYSICS_EVENT" do
-      ReadNextPacket(bin_file)
+  if evtfiles[1]:find(".evt") ~= nil then
+    UnpackBinary = UnpackEvtPacket
+
+    if skip_to_physics then
+      while ReadNextPacket(bin_file) ~= "PHYSICS_EVENT" do
+        ReadNextPacket(bin_file)
+      end
     end
+  elseif evtfiles[1]:find(".ldf") ~= nil then
+    LDF_UNPACKER.bindata.file = bin_file
+    UnpackBinary = UnpackLDFPacket
   end
 
 --  debug_log=2
